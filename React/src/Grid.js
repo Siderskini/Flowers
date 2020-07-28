@@ -10,7 +10,7 @@ class Grid extends React.Component {
 		this.cols = 12;
 		this.state = {
 			grid: this.makeEmptyGrid(),
-			current: 'null',
+			current: ['null', 'null'],
 			watergrid: this.makeEmptyWaterGrid(),
 			flowers: [],
 			search: ""
@@ -55,7 +55,7 @@ class Grid extends React.Component {
     	for (x = 0; x < this.rows; x++) {
       		grid[x] = [];
       		for (y = 0; y < this.cols; y++) {
-        		grid[x][y] = 'null';
+        		grid[x][y] = ['null', 'null'];
       		}
     	}
     	return grid;
@@ -77,8 +77,8 @@ class Grid extends React.Component {
   		this.setState({current: event.target.id});
   	}
 
-  	setCurrentFlower(flower) {
-  		this.setState({current: flower});
+  	setCurrentFlower(flower, gene) {
+  		this.setState({current: [flower, gene]});
   	}
 
   	changeCell(event) {
@@ -172,7 +172,8 @@ class Grid extends React.Component {
   			let color = this.state.watergrid[x][y] ? 'skyblue':'peru';
       		arr.push(<div key={x.toString() + y.toString()} className="col-0" style={{height: 40, background:color}} onClick = {this.changeCell}>
       			<Flower
-        			flower = {this.state.grid[x][y]}
+        			flower = {this.state.grid[x][y][0]}
+              gene = {this.state.grid[x][y][1]}
               x = {x}
               y = {y}
         		/>
@@ -216,8 +217,9 @@ class Grid extends React.Component {
   		var c, f;
   		for (x = 0; x < this.state.flowers.length; x++) {
   			let y = x;
+        let gene = this.state.flowers[x][2];
   			if (this.showEntry(this.state.flowers[x][0], this.state.flowers[x][1], this.state.flowers[x][2])) {
-  				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y))}>
+  				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y), gene)}>
 		    		<td>{this.state.flowers[x][0]}</td>
 		    		<td>{this.state.flowers[x][1]}</td>
 	        		<td>{this.state.flowers[x][2]}</td>
