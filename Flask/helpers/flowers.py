@@ -2,6 +2,7 @@ import pandas as pd
 import pickle
 from db.store import store
 from db.find import find_generic, find, get_all
+from numpy import random
 
 """
 Class to store the relevant information 
@@ -114,6 +115,14 @@ def get_parents(flower):
 		if f.isParent(flower):
 			ret.append(f)
 	return ret
+
+# Enter a gene and species and get a flower object
+def get_flower_by_gene(gene, species):
+	results = []
+	for f in list(flowers_dict[species].values()):
+		if (gene == f.gene):
+			return f
+	return None
 
 # Enter a color and species and get a list of flower objects
 def get_flowers_by_color(color, species):
@@ -231,5 +240,27 @@ def get_flowers():
 		for k, v in temp.items():
 			ret.append([key, v.color, v.gene])
 	return ret
+
+def get_child(gene1, gene2, species):
+	f1 = get_flower_by_gene(gene1, species)
+	f2 = get_flower_by_gene(gene2, species)
+	cp = child_probas(f1, f2)
+	sel = []
+	total = 0
+	for x in cp:
+		print(total)
+		sel.append([x[0], total + x[1]])
+		total += x[1]
+		print(total)
+	rand = random.random()
+	print(sel)
+	g = None
+	for x in range(len(sel) - 1):
+		if (rand > sel[x][1] and rand < sel[x + 1][1]):
+			g = sel[x][0]
+	if (g == None):
+		g = sel[len(sel) - 1][0]
+	f = get_flower_by_gene(g, species)
+	return [species, f.color, g]
 
 

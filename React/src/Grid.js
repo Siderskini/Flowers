@@ -10,7 +10,7 @@ class Grid extends React.Component {
 		this.cols = 12;
 		this.state = {
 			grid: this.makeEmptyGrid(),
-			current: ['null', 'null'],
+			current: ['null', 'null', 'null'],
 			watergrid: this.makeEmptyWaterGrid(),
 			flowers: [],
 			search: ""
@@ -26,7 +26,6 @@ class Grid extends React.Component {
 	}
 
 	componentDidMount() {
-		let f = []
 		let data = {
       		method: "GET",
     	};
@@ -46,7 +45,6 @@ class Grid extends React.Component {
 
 	handleChange(event) {
   		this.setState({search: event.target.value});
-  		console.log(event.target.value);
   	}
 
 	makeEmptyGrid() {
@@ -55,7 +53,7 @@ class Grid extends React.Component {
     	for (x = 0; x < this.rows; x++) {
       		grid[x] = [];
       		for (y = 0; y < this.cols; y++) {
-        		grid[x][y] = ['null', 'null'];
+        		grid[x][y] = ['null', 'null', 'null'];
       		}
     	}
     	return grid;
@@ -77,19 +75,16 @@ class Grid extends React.Component {
   		this.setState({current: event.target.id});
   	}
 
-  	setCurrentFlower(flower, gene) {
-  		this.setState({current: [flower, gene]});
+  	setCurrentFlower(flower, gene, species) {
+  		this.setState({current: [flower, gene, species]});
   	}
 
   	changeCell(event) {
-      console.log(event.target);
-      console.log(event.target.id);
-      console.log(event.target.key);
   		let x = parseInt(event.target.id[0]);
   		let y = parseInt(event.target.id[1]);
   		if (this.state.current === 'Water') {
   			let g = this.state.watergrid;
-  			g[x][y] = true;
+  			g[x][y] = !g[x][y];
   			this.setState({watergrid: g});
   		} else {
   			let g = this.state.grid;
@@ -105,14 +100,18 @@ class Grid extends React.Component {
   		let g = this.state.grid;
   		for (x = 0; x < this.rows; x++) {
       		for (y = 0; y < this.cols; y++) {
-      			let spaces = this.getSpaces(x, y);
-      			if (spaces.length === 0) {
-      				continue;
-      			}
-        		let neighbors = this.getNeighbors(x, y);
-        		let child = this.getChild(neighbors, spaces);
-        		g[child[1][0]][child[1][1]] = child[0];
-        		this.setState({grid: g});
+            if (this.state.grid[x][y][0] !== 'null') {
+        			var spaces = this.getSpaces(x, y);
+        			if (spaces.length === 0) {
+        				continue;
+        			}
+          		var neighbors = this.getNeighbors(this.state.grid[x][y], x, y);
+              //console.log(neighbors);
+          		var child = this.getChild(this.state.grid[x][y], neighbors, spaces);
+              //console.log(child);
+          		g[child[1][0]][child[1][1]] = child[0];
+          		this.setState({grid: g});
+            }
       		}
     	}
   		return;
@@ -121,39 +120,69 @@ class Grid extends React.Component {
   	//Gets open spaces adjacent to a flower
   	getSpaces(x, y) {
   		var a,b;
-  		let spaces = [];
+  		var spaces = [];
   		for (a = x-1; a <= x+1; a++) {
-      		for (b = y-1; b <= y+1; b++) {
-      			if (a !== x && b !== y && this.state.grid[a][b] === 'null') {
-      				spaces.push([a,b]);
- 				}
-      		}
-      	}
+    		for (b = y-1; b <= y+1; b++) {
+    			if (a >= 0 && a < this.rows && b >=0 && b < this.cols && (b !== y || a !== x)) {
+            if (this.state.grid[a][b][0] === "null") {
+    				  spaces.push([a,b]);
+            }
+				  }
+    		}
+      }
   		return spaces;
   	}
 
-  	//Gets flowers adjacent to a flower
-  	getNeighbors(x, y) {
+  	//Gets flowers of the same species adjacent to a flower
+  	getNeighbors(flower, x, y) {
   		var a,b;
-  		let neighbors = [];
+  		var neighbors = [];
   		for (a = x-1; a <= x+1; a++) {
-      		for (b = y-1; b <= y+1; b++) {
-      			if (a !== x && b !== y) {
-      				neighbors.push(this.state.grid[a][b]);
- 				}
-      		}
+        for (b = y-1; b <= y+1; b++) {
+      		if (a >= 0 && a < this.rows && b >=0 && b < this.cols && (b !== y || a !== x) && flower[2] === this.state.grid[a][b][2]) {
+      			neighbors.push(this.state.grid[a][b]);
+          }
       	}
+      }
   		return neighbors;
   	}
 
   	//Gets the child and position of multiple flowers
   	getChild(flower, neighbors, spaces) {
   		//TODO
+      if (neighbors.length === 0) {
+        let space = spaces[Math.floor(Math.random() * spaces.length)];
+        return [flower, space];
+      }
   		//Randomly select one of the neighbors
+      let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
   		//Determine the child with Flask API call
-  		//Randomly select an open space
-  		//Return the child and the open space
-  		return;
+      let data = {
+          method: "GET",
+          headers: {
+            gene1: flower[1],
+            gene2: neighbor[1],
+            species: flower[2]
+          }
+      };
+      var ret = ['null', 'null', 'null'];
+      fetch("http://localhost:5000/api/child", data)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.execution.status != "SUCCESS") {
+              ret = ['null', 'null', 'null'];
+          } else {
+            console.log(data.execution.child);
+            ret = data.execution.child;
+          }
+        })
+        .catch((error) => {
+          ret = ['null', 'null', 'null'];
+        });
+        //Randomly select an open space
+        var space = spaces[Math.floor(Math.random() * spaces.length)];
+        //Return the child and the open space
+        return [ret, space];
   	}
 
   	renderGrid() {
@@ -218,8 +247,9 @@ class Grid extends React.Component {
   		for (x = 0; x < this.state.flowers.length; x++) {
   			let y = x;
         let gene = this.state.flowers[x][2];
+        let species = this.state.flowers[x][0];
   			if (this.showEntry(this.state.flowers[x][0], this.state.flowers[x][1], this.state.flowers[x][2])) {
-  				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y), gene)}>
+  				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y), gene, species)}>
 		    		<td>{this.state.flowers[x][0]}</td>
 		    		<td>{this.state.flowers[x][1]}</td>
 	        		<td>{this.state.flowers[x][2]}</td>
@@ -252,7 +282,7 @@ class Grid extends React.Component {
                 <div className="container">
   					{this.renderGrid()}
   					<div key = "Advance" className="row justify-content-md-center">
-  						<button type="button" className="btn btn-primary col-sm-2 m-4">
+  						<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.advance}>
         					Advance
         				</button>
         			</div>

@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from workers.responsehandler import flowers_by_color, parent_probas, populate_db, flowers
+from workers.responsehandler import flowers_by_color, parent_probas, populate_db, flowers, child
 
 app = Flask(__name__)
 CORS(app)
@@ -48,4 +48,11 @@ Gets all flowers
 @app.route('/api/flowers', methods=['GET'])
 def get_flowers():
 	return jsonify(flowers())
+
+"""
+Gets child of 2 flowers based on gene and species
+"""
+@app.route('/api/child', methods=['GET'])
+def get_child():
+	return jsonify(child(request))
 
