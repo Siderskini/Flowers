@@ -1,0 +1,128 @@
+{
+	"info": {
+		"_postman_id": "f9cfd1dd-6fa3-4483-9be3-05d052a55fab",
+		"name": "Flowers",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Flowers By Color And Species",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "color",
+						"value": "Green",
+						"type": "text"
+					},
+					{
+						"key": "species",
+						"value": "Mums",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/flowers_by_color_species",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"flowers_by_color_species"
+					]
+				},
+				"description": "As JSON,\nYou send:\n{\n    \"color\" : color of flower\n    \"species\" : species of flower\n}\nYou get:\n{\n    \"flowers\": a list of flowers that match your query\n}"
+			},
+			"response": []
+		},
+		{
+			"name": "Parent Probabilities",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "flowerid",
+						"value": "3c",
+						"type": "text"
+					},
+					{
+						"key": "species",
+						"value": "Mums",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"flower_id\" : \"3c\",\n\t\"species\" : \"Mums\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/parent_probas",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"parent_probas"
+					]
+				},
+				"description": "You send:\n{\n    \"flower_id\" : the hex corresponding to the flower,\n    \"species\" : the species of the flower\n}\n\nYou get:\nA JSONified pandas dataframe"
+			},
+			"response": []
+		},
+		{
+			"name": "Populate",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:5000/api/populate",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"api",
+						"populate"
+					]
+				},
+				"description": "Populates the db with flower data"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
