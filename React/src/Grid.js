@@ -13,12 +13,14 @@ class Grid extends React.Component {
 			current: ['null', 'null', 'null'],
 			watergrid: this.makeEmptyWaterGrid(),
 			flowers: [],
-			search: ""
+			search: "",
+      pastGrids: []
 		};
 		this.makeEmptyGrid = this.makeEmptyGrid.bind(this);
 		this.makeEmptyWaterGrid = this.makeEmptyWaterGrid.bind(this);
 		this.setCurrent = this.setCurrent.bind(this);
 		this.changeCell = this.changeCell.bind(this);
+    this.revert = this.revert.bind(this);
 		this.advance = this.advance.bind(this);
 		this.renderGrid = this.renderGrid.bind(this);
 		this.renderRow = this.renderRow.bind(this);
@@ -94,8 +96,19 @@ class Grid extends React.Component {
   		return;
   	}
 
+    //Revert the grid by one time step
+    revert() {
+      if (this.state.pastGrids.length > 0) {
+        let past = this.state.pastGrids.pop();
+        this.setState({grid: past});
+      }
+    }
+
   	//Advance the grid by one time step
   	advance() {
+      let past = this.state.pastGrids;
+      past.push(JSON.parse(JSON.stringify(this.state.grid)));
+      this.setState({pastGrids: past});
   		var x, y;
   		for (x = 0; x < this.rows; x++) {
     		for (y = 0; y < this.cols; y++) {
@@ -110,16 +123,12 @@ class Grid extends React.Component {
       var spaces, neighbors, child;
       if (this.state.grid[x][y][0] !== 'null' && this.state.watergrid[x][y]) {
         spaces = this.getSpaces(x, y);
-        console.log("hey");
-        console.log(spaces);
         if (spaces.length === 0) {
           return;
         }
         neighbors = this.getNeighbors(this.state.grid[x][y], x, y);
-        console.log(neighbors);
         child = (this.getChild(this.state.grid[x][y], neighbors, spaces));
         await child.then((data) => {
-          console.log(data);
           g[data[1][0]][data[1][1]] = data[0];
           this.setState({grid: g});
         });
@@ -308,10 +317,14 @@ class Grid extends React.Component {
                 <div className="container">
   					{this.renderGrid()}
   					<div key = "Advance" className="row justify-content-md-center">
+              <button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.revert}>
+                Rewind
+              </button>
   						<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.advance}>
-        					Advance
-        				</button>
-        			</div>
+        				Advance
+        			</button>
+        		</div>
+            <p> Disclaimer: Watered flowers are guaranteed to reproduce every day and probabilities are based on Mendelian genetics. </p>
 				</div>
               </div>
               <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">...</div>
