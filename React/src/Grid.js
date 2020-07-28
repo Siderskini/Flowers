@@ -82,6 +82,9 @@ class Grid extends React.Component {
   	}
 
   	changeCell(event) {
+      console.log(event.target);
+      console.log(event.target.id);
+      console.log(event.target.key);
   		let x = parseInt(event.target.id[0]);
   		let y = parseInt(event.target.id[1]);
   		if (this.state.current === 'Water') {
@@ -170,8 +173,8 @@ class Grid extends React.Component {
       		arr.push(<div key={x.toString() + y.toString()} className="col-0" style={{height: 40, background:color}} onClick = {this.changeCell}>
       			<Flower
         			flower = {this.state.grid[x][y]}
-        			x = {x.toString()}
-        			y = {y.toString()}
+              x = {x}
+              y = {y}
         		/>
     		</div>);
       	}
