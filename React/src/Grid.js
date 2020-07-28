@@ -6,8 +6,8 @@ class Grid extends React.Component {
 
 	constructor() {
 		super();
-		this.rows = 12;
-		this.cols = 12;
+		this.rows = 8;
+		this.cols = 8;
 		this.state = {
 			grid: this.makeEmptyGrid(),
 			current: ['null', 'null', 'null'],
@@ -97,25 +97,34 @@ class Grid extends React.Component {
   	//Advance the grid by one time step
   	advance() {
   		var x, y;
-  		let g = this.state.grid;
   		for (x = 0; x < this.rows; x++) {
-      		for (y = 0; y < this.cols; y++) {
-            if (this.state.grid[x][y][0] !== 'null') {
-        			var spaces = this.getSpaces(x, y);
-        			if (spaces.length === 0) {
-        				continue;
-        			}
-          		var neighbors = this.getNeighbors(this.state.grid[x][y], x, y);
-              //console.log(neighbors);
-          		var child = this.getChild(this.state.grid[x][y], neighbors, spaces);
-              //console.log(child);
-          		g[child[1][0]][child[1][1]] = child[0];
-          		this.setState({grid: g});
-            }
-      		}
+    		for (y = 0; y < this.cols; y++) {
+          this.advanceSquare(x, y);
+    		}
     	}
   		return;
   	}
+
+    async advanceSquare(x, y) {
+      let g = this.state.grid;
+      var spaces, neighbors, child;
+      if (this.state.grid[x][y][0] !== 'null' && this.state.watergrid[x][y]) {
+        spaces = this.getSpaces(x, y);
+        console.log("hey");
+        console.log(spaces);
+        if (spaces.length === 0) {
+          return;
+        }
+        neighbors = this.getNeighbors(this.state.grid[x][y], x, y);
+        console.log(neighbors);
+        child = (this.getChild(this.state.grid[x][y], neighbors, spaces));
+        await child.then((data) => {
+          console.log(data);
+          g[data[1][0]][data[1][1]] = data[0];
+          this.setState({grid: g});
+        });
+      }
+    }
 
   	//Gets open spaces adjacent to a flower
   	getSpaces(x, y) {
@@ -149,40 +158,57 @@ class Grid extends React.Component {
 
   	//Gets the child and position of multiple flowers
   	getChild(flower, neighbors, spaces) {
-  		//TODO
-      if (neighbors.length === 0) {
-        let space = spaces[Math.floor(Math.random() * spaces.length)];
-        return [flower, space];
-      }
-  		//Randomly select one of the neighbors
-      let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
-  		//Determine the child with Flask API call
-      let data = {
-          method: "GET",
-          headers: {
-            gene1: flower[1],
-            gene2: neighbor[1],
-            species: flower[2]
-          }
-      };
-      var ret = ['null', 'null', 'null'];
-      fetch("http://localhost:5000/api/child", data)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.execution.status != "SUCCESS") {
-              ret = ['null', 'null', 'null'];
-          } else {
-            console.log(data.execution.child);
-            ret = data.execution.child;
-          }
-        })
-        .catch((error) => {
-          ret = ['null', 'null', 'null'];
+      return new Promise((resolve, reject) => {
+        //If there are no neighbors, the flower duplicates
+        if (neighbors.length === 0) {
+          let space = spaces[Math.floor(Math.random() * spaces.length)];
+          return [flower, space];
+        }
+    		//Randomly select one of the neighbors
+        let neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+    		//Determine the child with Flask API call
+        let data = {
+            method: "GET",
+            headers: {
+              gene1: flower[1],
+              gene2: neighbor[1],
+              species: flower[2]
+            }
+        };
+        fetch("http://localhost:5000/api/child", data)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.execution.status != "SUCCESS") {
+                var ret = ['null', 'null', 'null'];
+                //Randomly select an open space
+                var space = spaces[Math.floor(Math.random() * spaces.length)];
+                //Return the child and the open space
+                resolve([ret, space]);
+            } else {
+              var ret = data.execution.child;
+              console.log(ret);
+              let c = ret[1].toLowerCase();
+              let f = ret[0].toLowerCase();
+              if (c.includes('seed')) {
+                c = c.slice(0, c.length - 7);
+              }
+              ret[0] = c + f;
+              ret[1] = ret[2];
+              ret[2] = flower[2];
+              //Randomly select an open space
+              var space = spaces[Math.floor(Math.random() * spaces.length)];
+              //Return the child and the open space
+              resolve([ret, space]);
+            }
+          })
+          .catch((error) => {
+            var ret = ['null', 'null', 'null'];
+            //Randomly select an open space
+            var space = spaces[Math.floor(Math.random() * spaces.length)];
+            //Return the child and the open space
+            resolve([ret, space]);
         });
-        //Randomly select an open space
-        var space = spaces[Math.floor(Math.random() * spaces.length)];
-        //Return the child and the open space
-        return [ret, space];
+      });
   	}
 
   	renderGrid() {
