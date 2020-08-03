@@ -25,6 +25,8 @@ class Grid extends React.Component {
 		this.renderGrid = this.renderGrid.bind(this);
 		this.renderRow = this.renderRow.bind(this);
 		this.handleChange = this.handleChange.bind(this);
+    this.save = this.save.bind(this);
+    this.load = this.load.bind(this);
 	}
 
 	componentDidMount() {
@@ -220,6 +222,25 @@ class Grid extends React.Component {
       });
   	}
 
+    save() {
+      let stringify = JSON.stringify(this.state.grid);
+      let b64 = btoa(stringify);
+      let data = new Blob([b64], {type: 'text/plain'});
+      let url = window.URL.createObjectURL(data);
+      return url;
+    }
+
+    load(event) {
+      var fr = new FileReader();
+      fr.readAsText(event.target.files[0]);
+      const scope = this;
+      fr.onload = function(e) {
+        var g = JSON.parse(atob(fr.result));
+        console.log(g);
+        scope.setState({grid: g});
+      };
+    }
+
   	renderGrid() {
   		let arr = [];
   		var x;
@@ -315,19 +336,28 @@ class Grid extends React.Component {
             <div className="tab-content" id="nav-tabContent">
               <div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
                 <div className="container">
-  					{this.renderGrid()}
-  					<div key = "Advance" className="row justify-content-md-center">
-              <button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.revert}>
-                Rewind
-              </button>
-  						<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.advance}>
-        				Advance
-        			</button>
-        		</div>
+                  <div key = "Advance" className="row justify-content-md-center">
+                    <button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.revert}>
+                      Rewind
+                    </button>
+                    <button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.advance}>
+                      Advance
+                    </button>
+                  </div>
+  					      {this.renderGrid()}
+                  <br/>
+                  <div className="row justify-content-md-center">
+                    <label className="btn btn-primary col-sm-2 m-4"> 
+                      <a className="text-white" href={this.save()} download="garden">Save</a>
+                    </label>
+                    <label className="btn btn-primary col-sm-2 m-4" onChange={this.load}>
+                      Load <input type="file" style={{display:"none"}}/>
+                    </label>
+                  </div>
             <p> Disclaimer: Watered flowers are guaranteed to reproduce every day and probabilities are based on Mendelian genetics. </p>
 				</div>
-              </div>
-              <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">...</div>
+          </div>
+            <div className="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">...</div>
               <div className="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
               <div className="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">...</div>
             </div>
