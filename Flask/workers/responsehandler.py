@@ -102,7 +102,7 @@ def parent_probas(request):
 	# Get the parent probabilities
 	try:
 		result = flower_by_id(flower_id, species)
-		results, df = get_parent_probas(flower)
+		results, df = get_parent_probas(result)
 		response['parents'] = df.to_json()
 	except Exception as e:
 		response['execution']['message'] = 'Something went wrong! ' + str(e)

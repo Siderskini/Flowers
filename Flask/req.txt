@@ -11,3 +11,5 @@ python-dateutil==2.8.1
 pytz==2020.1
 six==1.14.0
 Werkzeug==1.0.1
+antiorm-1.2.1
+db-0.1.1
