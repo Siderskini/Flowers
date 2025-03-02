@@ -33,7 +33,7 @@ class Grid extends React.Component {
 		let data = {
 			method: "GET",
 		};
-		fetch("http://localhost:5000/api/flowers", data)
+		fetch("http://127.0.0.1:5000/api/flowers", data)
 		.then((response) => response.json())
 		.then((data) => {
 			if (data.execution.status !== "SUCCESS") {
@@ -181,12 +181,12 @@ class Grid extends React.Component {
 			let data = {
 				method: "GET",
 				headers: {
-				gene1: flower[1],
-				gene2: neighbor[1],
-				species: flower[2]
+					gene1: flower[1],
+					gene2: neighbor[1],
+					species: flower[2]
 				}
 			};
-			fetch("http://localhost:5000/api/child", data)
+			fetch("http://127.0.0.1:5000/api/child", data)
 			.then((response) => response.json())
 			.then((data) => {
 			var ret, space;

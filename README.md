@@ -16,5 +16,6 @@ To use the MongoDB functionality:
 All of the flower data will show up in these collections when you send the populate request from Postman or other API calling app
 
 To run the React UI
-1. Install npm (this may need you to install or upgrade node)
-2. `npm start`
+1. Install latest npm (this may need you to install or upgrade node)
+2. `npm install --save-dev ajv@^7`
+3. `npm start`

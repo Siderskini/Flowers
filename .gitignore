@@ -1,3 +1,5 @@
 *__pycache__*
 *node_modules*
 *lock
+/Flask/.ipynb_checkpoints
+React/package-lock.json
