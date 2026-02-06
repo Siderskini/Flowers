@@ -1,4 +1,5 @@
 import React from 'react';
+import './Grid.css';
 import Flower from './Flower';
 import './App.css';
 
@@ -248,7 +249,7 @@ class Grid extends React.Component {
 		let arr = [];
 		var x;
 		for (x = 0; x < this.rows; x++) {
-			arr.push(<div key = {"row" + x.toString()} className="row justify-content-md-center"> {this.renderRow(x)} </div>);
+			arr.push(<div key = {"row" + x.toString()} className="row justify-content-md-center g-0 grid-row"> {this.renderRow(x)} </div>);
 		}
 		return arr;
 	}
@@ -258,7 +259,7 @@ class Grid extends React.Component {
 		var y;
 		for (y = 0; y < this.cols; y++) {
 			let color = this.state.watergrid[x][y] ? 'skyblue':'peru';
-			arr.push(<div key={x.toString() + y.toString()} className="col-0" style={{height: 40, background:color}} onClick = {this.changeCell}>
+			arr.push(<div key={x.toString() + y.toString()} className="col-auto p-0 grid-cell" style={{backgroundColor: color}} onClick = {this.changeCell}>
 				<Flower
 					flower = {this.state.grid[x][y][0]}
 					gene = {this.state.grid[x][y][1]}

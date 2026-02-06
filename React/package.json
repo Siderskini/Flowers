@@ -1,31 +1,37 @@
 {
-  "name": "flowers",
-  "version": "0.0.0",
-  "main": "/src/index.jsx",
+  "name": "Flowers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "build": "rsbuild build",
+    "dev": "rsbuild dev --open",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "preview": "rsbuild preview",
+    "test": "rstest",
+    "test:watch": "rstest --watch"
   },
   "dependencies": {
-    "react": "19.0.0-rc-3edc000d-20240926",
-    "react-dom": "19.0.0-rc-3edc000d-20240926",
-    "react-scripts": "^5.0.1"
+    "bootstrap": "^5.3.8",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "ajv": "^7.2.4"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "@eslint/js": "^9.39.1",
+    "@rsbuild/core": "^1.7.1",
+    "@rsbuild/plugin-react": "^1.4.2",
+    "@rstest/core": "^0.7.8",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "happy-dom": "^20.0.11",
+    "prettier": "^3.7.3",
+    "tailwindcss": "^4.1.18"
   }
 }

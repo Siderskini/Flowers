@@ -1,5 +1,19 @@
+#Flask
 *__pycache__*
-*node_modules*
-*lock
 /Flask/.ipynb_checkpoints
+
+#React
 React/package-lock.json
+*node_modules*
+dist/
+.rspack-profile-*/
+
+# Local
+.DS_Store
+*.local
+*.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
