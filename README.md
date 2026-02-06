@@ -1,6 +1,6 @@
-#Instructions for running this app:
+# Instructions for running this app:
 
-##First make a python environment
+## First make a python environment
 In the Flask folder:
 
 a. Install venv with homebrew `brew install venv`
@@ -10,14 +10,14 @@ c. Enter a session in your virtual environment with `source env/bin/activate`
 d. `pip install -r req.txt`
 e. `flask run`
 
-##To use the MongoDB functionality:
+## To use the MongoDB functionality:
 a. Download mongodb compass
 b. Go to your root directory and make a `/data` folder and a `/db` folder inside that
 c. Run mongodb server with `mongod --dbpath ./data/db`
 d. Inside compass, create a new db called flowers and add collections for all the flowers (in lowercase)
 All of the flower data will show up in these collections when you send the populate request from Postman or other API calling app
 
-##To run the React UI
+## To run the React UI
 In the React folder:
 
 a. Install latest npm (this may need you to install or upgrade node)
