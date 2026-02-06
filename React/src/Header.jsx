@@ -1,5 +1,5 @@
 import React from 'react';
-function Header(props) {
+export default function Header(props) {
   return (
     <div className="jumbotron jumbotron-fluid">
       <div className="container text-center">
@@ -8,6 +8,3 @@ function Header(props) {
     </div>
   );
 }
-
-
-export default Header
