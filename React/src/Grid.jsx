@@ -13,10 +13,10 @@ class Grid extends React.Component {
 			grid: this.makeEmptyGrid(),
 			current: ['null', 'null', 'null'],
 			watergrid: this.makeEmptyWaterGrid(),
-			flowers: [],
 			search: "",
 			pastGrids: []
 		};
+		this.flowers = [];
 		this.makeEmptyGrid = this.makeEmptyGrid.bind(this);
 		this.makeEmptyWaterGrid = this.makeEmptyWaterGrid.bind(this);
 		this.setCurrent = this.setCurrent.bind(this);
@@ -37,14 +37,14 @@ class Grid extends React.Component {
 		fetch("http://127.0.0.1:5000/api/flowers", data)
 		.then((response) => response.json())
 		.then((data) => {
-			if (data.execution.status !== "SUCCESS") {
-				this.setState({flowers: []});
+			if (data.execution.status === "SUCCESS") {
+				this.flowers = data.execution.flowers;
 			} else {
-				this.setState({flowers: data.execution.flowers});
+				console.log(response);
 			}
 		})
 		.catch((error) => {
-			this.setState({flowers: []});
+			console.log(error);
 		});
 	}
 
@@ -305,15 +305,15 @@ class Grid extends React.Component {
 	populateTable() {
 		let arr = [];
 		var x;
-		for (x = 0; x < this.state.flowers.length; x++) {
+		for (x = 0; x < this.flowers.length; x++) {
 			let y = x;
-		let gene = this.state.flowers[x][2];
-		let species = this.state.flowers[x][0];
-			if (this.showEntry(this.state.flowers[x][0], this.state.flowers[x][1], this.state.flowers[x][2])) {
+		let gene = this.flowers[x][2];
+		let species = this.flowers[x][0];
+			if (this.showEntry(this.flowers[x][0], this.flowers[x][1], this.flowers[x][2])) {
 				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y), gene, species)}>
-					<td>{this.state.flowers[x][0]}</td>
-					<td>{this.state.flowers[x][1]}</td>
-					<td>{this.state.flowers[x][2]}</td>
+					<td>{this.flowers[x][0]}</td>
+					<td>{this.flowers[x][1]}</td>
+					<td>{this.flowers[x][2]}</td>
 				</tr>);
 			}
 		}
@@ -339,8 +339,8 @@ class Grid extends React.Component {
 	}
 
 	makeID(x) {
-		let c = this.state.flowers[x][1].toLowerCase();
-		let f = this.state.flowers[x][0].toLowerCase();
+		let c = this.flowers[x][1].toLowerCase();
+		let f = this.flowers[x][0].toLowerCase();
 		if (c.includes('seed')) {
 			c = c.slice(0, c.length - 7);
 		}
