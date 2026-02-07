@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState , useEffect, useRef} from 'react';
 import './Grid.css';
 import Flower from './Flower';
 
@@ -11,17 +11,21 @@ export default function Grid() {
 	const [watergrid, setWatergrid] = useState(makeEmptyWaterGrid());
 	const [search, setSearch] = useState("");
 	const [pastGrids, setPastGrids] = useState([]);
-	var flowers = [];
+	const flowers = useRef([]);
+	const cloneGrid = (g) => g.map(row => row.map(cell => [...cell])); // 2D + cell array clone
+  	const cloneWater = (w) => w.map(row => [...row]); // 2D boolean clone
+  	const clonePast = (past) => past.map(savedGrid => cloneGrid(savedGrid)); // 3D history
+	
+	let data = {
+		method: "GET",
+	};
 
 	useEffect(() => {
-		let data = {
-			method: "GET",
-		};
 		fetch("http://127.0.0.1:5000/api/flowers", data)
 		.then((response) => response.json())
 		.then((data) => {
 			if (data.execution.status === "SUCCESS") {
-				flowers = data.execution.flowers;
+				flowers.current = data.execution.flowers;
 			} else {
 				console.log(response);
 			}
@@ -71,11 +75,11 @@ export default function Grid() {
 		let x = parseInt(event.target.id[0]);
 		let y = parseInt(event.target.id[1]);
 		if (current === 'Water') {
-			let g = watergrid;
+			let g = cloneWater(watergrid);
 			g[x][y] = !g[x][y];
 			setWatergrid(g);
 		} else {
-			let g = grid;
+			let g = cloneGrid(grid);
 			g[x][y] = current;
 			setGrid(g);
 		}
@@ -85,16 +89,16 @@ export default function Grid() {
 	//Revert the grid by one time step
 	function revert() {
 		if (pastGrids.length > 0) {
-			let past = pastGrids.pop();
+			let past = clonePast(pastGrids).pop();
 			setGrid(past);
 		}
 	}
 
 	//Advance the grid by one time step
 	function advance() {
-		let past = pastGrids;
+		let past = clonePast(pastGrids);
 		past.push(JSON.parse(JSON.stringify(grid)));
-		setGrid(past);
+		setPastGrids(past);
 		var x, y;
 		for (x = 0; x < rows; x++) {
 			for (y = 0; y < cols; y++) {
@@ -105,7 +109,7 @@ export default function Grid() {
 	}
 
 	async function advanceSquare(x, y) {
-		let g = grid;
+		let g = cloneGrid(grid);
 		var spaces, neighbors, child;
 		if (grid[x][y][0] !== 'null' && watergrid[x][y]) {
 			spaces = getSpaces(x, y);
@@ -222,7 +226,7 @@ export default function Grid() {
 		fr.onload = function(e) {
 			let save = JSON.parse(atob(fr.result));
 			console.log(save);
-			setgrid(save.grid);
+			setGrid(save.grid);
 			setWatergrid(save.watergrid);
 			setPastGrids(save.pastGrids);
 		};
@@ -288,15 +292,15 @@ export default function Grid() {
 	function populateTable() {
 		let arr = [];
 		var x;
-		for (x = 0; x < flowers.length; x++) {
+		for (x = 0; x < flowers.current.length; x++) {
 			let y = x;
-		let gene = flowers[x][2];
-		let species = flowers[x][0];
-			if (showEntry(flowers[x][0], flowers[x][1], flowers[x][2])) {
-				arr.push(<tr onClick={() => setCurrentFlower(makeID(y), gene, species)}>
-					<td>{flowers[x][0]}</td>
-					<td>{flowers[x][1]}</td>
-					<td>{flowers[x][2]}</td>
+			let gene = flowers.current[x][2];
+			let species = flowers.current[x][0];
+			if (showEntry(flowers.current[x][0], flowers.current[x][1], flowers.current[x][2])) {
+				arr.push(<tr key = {"fl"+x.toString()} onClick={() => setCurrentFlower(makeID(y), gene, species)}>
+					<td>{flowers.current[x][0]}</td>
+					<td>{flowers.current[x][1]}</td>
+					<td>{flowers.current[x][2]}</td>
 				</tr>);
 			}
 		}
@@ -304,9 +308,6 @@ export default function Grid() {
 	}
 
 	function showEntry(f, c, g) {
-		if (search.length === 0) {
-			return true;
-		}
 		let arr = search.split(" ");
 		if (arr.length === 1) {
 			return f.includes(search) || c.includes(search) || g.includes(search);
@@ -322,8 +323,8 @@ export default function Grid() {
 	}
 
 	function makeID(x) {
-		let c = flowers[x][1].toLowerCase();
-		let f = flowers[x][0].toLowerCase();
+		let c = flowers.current[x][1].toLowerCase();
+		let f = flowers.current[x][0].toLowerCase();
 		if (c.includes('seed')) {
 			c = c.slice(0, c.length - 7);
 		}
