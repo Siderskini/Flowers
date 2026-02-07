@@ -16,11 +16,10 @@ export default function Grid() {
   	const cloneWater = (w) => w.map(row => [...row]); // 2D boolean clone
   	const clonePast = (past) => past.map(savedGrid => cloneGrid(savedGrid)); // 3D history
 	
-	let data = {
-		method: "GET",
-	};
-
 	useEffect(() => {
+		let data = {
+			method: "GET",
+		};
 		fetch("http://127.0.0.1:5000/api/flowers", data)
 		.then((response) => response.json())
 		.then((data) => {
@@ -33,7 +32,7 @@ export default function Grid() {
 		.catch((error) => {
 			console.log(error);
 		});
-	});
+	}, []);
 
 	function handleChange(event) {
 		setSearch(event.target.value);
@@ -96,44 +95,47 @@ export default function Grid() {
 	}
 
 	//Advance the grid by one time step
-	function advance() {
-		let past = clonePast(pastGrids);
-		past.push(JSON.parse(JSON.stringify(grid)));
-		setPastGrids(past);
-		var x, y;
+	async function advance() {
+		const sourceGrid = cloneGrid(grid);
+		const nextGrid = cloneGrid(sourceGrid);
+		setPastGrids((prevPastGrids) => [...clonePast(prevPastGrids), sourceGrid]);
+		let x, y;
+		const updates = [];
 		for (x = 0; x < rows; x++) {
 			for (y = 0; y < cols; y++) {
-				advanceSquare(x, y);
+				updates.push(advanceSquare(sourceGrid, x, y));
 			}
 		}
-		return;
+		const children = await Promise.all(updates);
+		children.forEach((child) => {
+			if (child !== null) {
+				nextGrid[child[1][0]][child[1][1]] = child[0];
+			}
+		});
+		setGrid(nextGrid);
 	}
 
-	async function advanceSquare(x, y) {
-		let g = cloneGrid(grid);
-		var spaces, neighbors, child;
-		if (grid[x][y][0] !== 'null' && watergrid[x][y]) {
-			spaces = getSpaces(x, y);
+	async function advanceSquare(sourceGrid, x, y) {
+		let spaces, neighbors;
+		if (sourceGrid[x][y][0] !== 'null' && watergrid[x][y]) {
+			spaces = getSpaces(sourceGrid, x, y);
 			if (spaces.length === 0) {
-				return;
+				return null;
 			}
-			neighbors = getNeighbors(grid[x][y], x, y);
-			child = (getChild(grid[x][y], neighbors, spaces));
-			await child.then((data) => {
-				g[data[1][0]][data[1][1]] = data[0];
-				setGrid(g);
-			});
+			neighbors = getNeighbors(sourceGrid, sourceGrid[x][y], x, y);
+			return getChild(sourceGrid[x][y], neighbors, spaces);
 		}
+		return null;
 	}
 
 	//Gets open spaces adjacent to a flower
-	function getSpaces(x, y) {
+	function getSpaces(sourceGrid, x, y) {
 		var a,b;
 		var spaces = [];
 		for (a = x-1; a <= x+1; a++) {
 			for (b = y-1; b <= y+1; b++) {
 				if (a >= 0 && a < rows && b >=0 && b < cols && (b !== y || a !== x)) {
-					if (grid[a][b][0] === "null") {
+					if (sourceGrid[a][b][0] === "null") {
 							spaces.push([a,b]);
 					}
 				}
@@ -143,13 +145,13 @@ export default function Grid() {
 	}
 
 	//Gets flowers of the same species adjacent to a flower
-	function getNeighbors(flower, x, y) {
+	function getNeighbors(sourceGrid, flower, x, y) {
 		var a,b;
 		var neighbors = [];
 		for (a = x-1; a <= x+1; a++) {
 			for (b = y-1; b <= y+1; b++) {
-				if (a >= 0 && a < rows && b >=0 && b < cols && (b !== y || a !== x) && flower[2] === grid[a][b][2]) {
-					neighbors.push(grid[a][b]);
+				if (a >= 0 && a < rows && b >=0 && b < cols && (b !== y || a !== x) && flower[2] === sourceGrid[a][b][2]) {
+					neighbors.push(sourceGrid[a][b]);
 				}
 			}
 		}
@@ -268,13 +270,13 @@ export default function Grid() {
 					<button className="list-group-item" id='Remove' role="tab" onClick={() => setCurrentFlower("null", "null", "null")}> Remove </button>
 					<br/>
 					<div className="container-75 text-center">
-						<h5>Flowers</h5>
-						<p>Search by flower, color, or genes:</p>
+						<h5>Select A Flower To Plant</h5>
+						<p>Search by species, color, or genes:</p>
 						<input className="form-control" id="myInput" type="text" placeholder="Search" onChange={handleChange}/>
 						<table className="table table-bordered table-striped">
 							<thead>
 								<tr>
-									<th>Flower</th>
+									<th>Species</th>
 									<th>Color</th>
 									<th>Genes</th>
 								</tr>
