@@ -23,3 +23,5 @@ In the React folder:
 a. Install latest npm (this may need you to install or upgrade node)
 b. `npm install --save-dev ajv@^7`
 c. `npm start`
+
+## A previous version using legacy React components is available on the legacy branch

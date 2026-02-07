@@ -2,7 +2,7 @@ import './App.css';
 import Header from './Header';
 import Grid from './Grid';
 
-const App = () => {
+export default function App() {
   return (
     <>
       <Header/>
@@ -10,5 +10,3 @@ const App = () => {
     </>
   );
 };
-
-export default App;

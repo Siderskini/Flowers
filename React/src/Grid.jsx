@@ -1,36 +1,22 @@
-import React from 'react';
+import { useState , useEffect, useRef} from 'react';
 import './Grid.css';
 import Flower from './Flower';
-import './App.css';
 
-class Grid extends React.Component {
+export default function Grid() {
+	const rows = 8;
+	const cols = 8;
 
-	constructor() {
-		super();
-		this.rows = 8;
-		this.cols = 8;
-		this.state = {
-			grid: this.makeEmptyGrid(),
-			current: ['null', 'null', 'null'],
-			watergrid: this.makeEmptyWaterGrid(),
-			search: "",
-			pastGrids: []
-		};
-		this.flowers = [];
-		this.makeEmptyGrid = this.makeEmptyGrid.bind(this);
-		this.makeEmptyWaterGrid = this.makeEmptyWaterGrid.bind(this);
-		this.setCurrent = this.setCurrent.bind(this);
-		this.changeCell = this.changeCell.bind(this);
-		this.revert = this.revert.bind(this);
-		this.advance = this.advance.bind(this);
-		this.renderGrid = this.renderGrid.bind(this);
-		this.renderRow = this.renderRow.bind(this);
-		this.handleChange = this.handleChange.bind(this);
-		this.save = this.save.bind(this);
-		this.load = this.load.bind(this);
-	}
-
-	componentDidMount() {
+	const [grid, setGrid] = useState(makeEmptyGrid());
+	const [current, setCurrent] = useState(['null', 'null', 'null']);
+	const [watergrid, setWatergrid] = useState(makeEmptyWaterGrid());
+	const [search, setSearch] = useState("");
+	const [pastGrids, setPastGrids] = useState([]);
+	const flowers = useRef([]);
+	const cloneGrid = (g) => g.map(row => row.map(cell => [...cell])); // 2D + cell array clone
+  	const cloneWater = (w) => w.map(row => [...row]); // 2D boolean clone
+  	const clonePast = (past) => past.map(savedGrid => cloneGrid(savedGrid)); // 3D history
+	
+	useEffect(() => {
 		let data = {
 			method: "GET",
 		};
@@ -38,7 +24,7 @@ class Grid extends React.Component {
 		.then((response) => response.json())
 		.then((data) => {
 			if (data.execution.status === "SUCCESS") {
-				this.flowers = data.execution.flowers;
+				flowers.current = data.execution.flowers;
 			} else {
 				console.log(response);
 			}
@@ -46,106 +32,110 @@ class Grid extends React.Component {
 		.catch((error) => {
 			console.log(error);
 		});
+	}, []);
+
+	function handleChange(event) {
+		setSearch(event.target.value);
 	}
 
-	handleChange(event) {
-		this.setState({search: event.target.value});
-	}
-
-	makeEmptyGrid() {
+	function makeEmptyGrid() {
 		let grid = [];
 		var x, y;
-		for (x = 0; x < this.rows; x++) {
+		for (x = 0; x < rows; x++) {
 			grid[x] = [];
-			for (y = 0; y < this.cols; y++) {
+			for (y = 0; y < cols; y++) {
 				grid[x][y] = ['null', 'null', 'null'];
 			}
 		}
 		return grid;
 	}
 
-	makeEmptyWaterGrid() {
+	function makeEmptyWaterGrid() {
 		let grid = [];
 		var x, y;
-		for (x = 0; x < this.rows; x++) {
+		for (x = 0; x < rows; x++) {
 			grid[x] = [];
-			for (y = 0; y < this.cols; y++) {
+			for (y = 0; y < cols; y++) {
 				grid[x][y] = false;
 			}
 		}
 		return grid;
 	}
 
-	setCurrent(event) {
-		this.setState({current: event.target.id});
+	function setCurrentEvent(event) {
+		setCurrent(event.target.id);
 	}
 
-	setCurrentFlower(flower, gene, species) {
-		this.setState({current: [flower, gene, species]});
+	function setCurrentFlower(flower, gene, species) {
+		setCurrent([flower, gene, species]);
 	}
 
-	changeCell(event) {
+	function changeCell(event) {
 		let x = parseInt(event.target.id[0]);
 		let y = parseInt(event.target.id[1]);
-		if (this.state.current === 'Water') {
-			let g = this.state.watergrid;
+		if (current === 'Water') {
+			let g = cloneWater(watergrid);
 			g[x][y] = !g[x][y];
-			this.setState({watergrid: g});
+			setWatergrid(g);
 		} else {
-			let g = this.state.grid;
-			g[x][y] = this.state.current;
-			this.setState({grid: g});
+			let g = cloneGrid(grid);
+			g[x][y] = current;
+			setGrid(g);
 		}
 		return;
 	}
 
 	//Revert the grid by one time step
-	revert() {
-		if (this.state.pastGrids.length > 0) {
-			let past = this.state.pastGrids.pop();
-			this.setState({grid: past});
+	function revert() {
+		if (pastGrids.length > 0) {
+			let past = clonePast(pastGrids)
+			setGrid(past.pop());
+			setPastGrids(past);
 		}
 	}
 
 	//Advance the grid by one time step
-	advance() {
-		let past = this.state.pastGrids;
-		past.push(JSON.parse(JSON.stringify(this.state.grid)));
-		this.setState({pastGrids: past});
-		var x, y;
-		for (x = 0; x < this.rows; x++) {
-			for (y = 0; y < this.cols; y++) {
-				this.advanceSquare(x, y);
+	async function advance() {
+		const sourceGrid = cloneGrid(grid);
+		const nextGrid = cloneGrid(sourceGrid);
+		setPastGrids((prevPastGrids) => [...clonePast(prevPastGrids), sourceGrid]);
+		let x, y;
+		const updates = [];
+		for (x = 0; x < rows; x++) {
+			for (y = 0; y < cols; y++) {
+				updates.push(advanceSquare(sourceGrid, x, y));
 			}
 		}
-		return;
+		const children = await Promise.all(updates);
+		children.forEach((child) => {
+			if (child !== null) {
+				nextGrid[child[1][0]][child[1][1]] = child[0];
+			}
+		});
+		setGrid(nextGrid);
 	}
 
-	async advanceSquare(x, y) {
-		let g = this.state.grid;
-		var spaces, neighbors, child;
-		if (this.state.grid[x][y][0] !== 'null' && this.state.watergrid[x][y]) {
-			spaces = this.getSpaces(x, y);
+	async function advanceSquare(sourceGrid, x, y) {
+		let spaces, neighbors;
+		if (sourceGrid[x][y][0] !== 'null' && watergrid[x][y]) {
+			spaces = getSpaces(sourceGrid, x, y);
 			if (spaces.length === 0) {
-				return;
+				return null;
 			}
-			neighbors = this.getNeighbors(this.state.grid[x][y], x, y);
-			child = (this.getChild(this.state.grid[x][y], neighbors, spaces));
-			await child.then((data) => {
-				g[data[1][0]][data[1][1]] = data[0];
-				this.setState({grid: g});
-			});
+			neighbors = getNeighbors(sourceGrid, sourceGrid[x][y], x, y);
+			return getChild(sourceGrid[x][y], neighbors, spaces);
 		}
+		return null;
 	}
 
 	//Gets open spaces adjacent to a flower
-	getSpaces(x, y) {
+	function getSpaces(sourceGrid, x, y) {
 		var a,b;
 		var spaces = [];
 		for (a = x-1; a <= x+1; a++) {
 			for (b = y-1; b <= y+1; b++) {
-				if (a >= 0 && a < this.rows && b >=0 && b < this.cols && (b !== y || a !== x)) {
-					if (this.state.grid[a][b][0] === "null") {
+				if (a >= 0 && a < rows && b >=0 && b < cols && (b !== y || a !== x)) {
+					if (sourceGrid[a][b][0] === "null") {
 							spaces.push([a,b]);
 					}
 				}
@@ -155,13 +145,13 @@ class Grid extends React.Component {
 	}
 
 	//Gets flowers of the same species adjacent to a flower
-	getNeighbors(flower, x, y) {
+	function getNeighbors(sourceGrid, flower, x, y) {
 		var a,b;
 		var neighbors = [];
 		for (a = x-1; a <= x+1; a++) {
 			for (b = y-1; b <= y+1; b++) {
-				if (a >= 0 && a < this.rows && b >=0 && b < this.cols && (b !== y || a !== x) && flower[2] === this.state.grid[a][b][2]) {
-					neighbors.push(this.state.grid[a][b]);
+				if (a >= 0 && a < rows && b >=0 && b < cols && (b !== y || a !== x) && flower[2] === sourceGrid[a][b][2]) {
+					neighbors.push(sourceGrid[a][b]);
 				}
 			}
 		}
@@ -169,7 +159,7 @@ class Grid extends React.Component {
 	}
 
 	//Gets the child and position of multiple flowers
-	getChild(flower, neighbors, spaces) {
+	function getChild(flower, neighbors, spaces) {
 		return new Promise((resolve, reject) => {
 			//If there are no neighbors, the flower duplicates
 			if (neighbors.length === 0) {
@@ -224,45 +214,45 @@ class Grid extends React.Component {
 		});
 	}
 
-	save() {
-		let stringify = JSON.stringify(this.state);
+	function save() {
+		let save = {grid: grid, watergrid: watergrid, pastGrids: pastGrids}
+		let stringify = JSON.stringify(save);
 		let b64 = btoa(stringify);
 		let data = new Blob([b64], {type: 'text/plain'});
 		let url = window.URL.createObjectURL(data);
 		return url;
 	}
 
-	load(event) {
+	function load(event) {
 		var fr = new FileReader();
 		fr.readAsText(event.target.files[0]);
-		const scope = this;
 		fr.onload = function(e) {
-			var state = JSON.parse(atob(fr.result));
-			console.log(state);
-			scope.setState({grid: state.grid});
-			scope.setState({watergrid: state.watergrid});
-			scope.setState({pastGrids: state.pastGrids});
+			let save = JSON.parse(atob(fr.result));
+			console.log(save);
+			setGrid(save.grid);
+			setWatergrid(save.watergrid);
+			setPastGrids(save.pastGrids);
 		};
 	}
 
-	renderGrid() {
+	function renderGrid() {
 		let arr = [];
 		var x;
-		for (x = 0; x < this.rows; x++) {
-			arr.push(<div key = {"row" + x.toString()} className="row justify-content-md-center g-0 grid-row"> {this.renderRow(x)} </div>);
+		for (x = 0; x < rows; x++) {
+			arr.push(<div key = {"row" + x.toString()} className="row justify-content-md-center g-0 grid-row"> {renderRow(x)} </div>);
 		}
 		return arr;
 	}
 
-	renderRow(x) {
+	function renderRow(x) {
 		let arr = [];
 		var y;
-		for (y = 0; y < this.cols; y++) {
-			let color = this.state.watergrid[x][y] ? 'skyblue':'peru';
-			arr.push(<div key={x.toString() + y.toString()} className="col-auto p-0 grid-cell" style={{backgroundColor: color}} onClick = {this.changeCell}>
+		for (y = 0; y < cols; y++) {
+			let color = watergrid[x][y] ? 'skyblue':'peru';
+			arr.push(<div key={x.toString() + y.toString()} className="col-auto p-0 grid-cell" style={{backgroundColor: color}} onClick = {changeCell}>
 				<Flower
-					flower = {this.state.grid[x][y][0]}
-					gene = {this.state.grid[x][y][1]}
+					flower = {grid[x][y][0]}
+					gene = {grid[x][y][1]}
 					x = {x}
 					y = {y}
 				/>
@@ -271,28 +261,28 @@ class Grid extends React.Component {
 		return arr;
 	}
 
-	search() {
+	function searchFlowers() {
 		let arr = [];
 		arr.push(
 			<div className="col-4">
 				<div className="list-group" id="list-tab" role="tablist">
-					<button className="list-group-item active" id='Water' role="tab" onClick = {this.setCurrent}> Water </button>
-					<button className="list-group-item" id='Remove' role="tab" onClick={() => this.setCurrentFlower("null", "null", "null")}> Remove </button>
+					<button className="list-group-item active" id='Water' role="tab" onClick = {setCurrentEvent}> Water </button>
+					<button className="list-group-item" id='Remove' role="tab" onClick={() => setCurrentFlower("null", "null", "null")}> Remove </button>
 					<br/>
-					<div class="container-75 text-center">
-						<h5>Flowers</h5>
-						<p>Search by flower, color, or genes:</p>
-						<input class="form-control" id="myInput" type="text" placeholder="Search" onChange={this.handleChange}/>
-						<table class="table table-bordered table-striped">
+					<div className="container-75 text-center">
+						<h5>Select A Flower To Plant</h5>
+						<p>Search by species, color, or genes:</p>
+						<input className="form-control" id="myInput" type="text" placeholder="Search" onChange={handleChange}/>
+						<table className="table table-bordered table-striped">
 							<thead>
 								<tr>
-									<th>Flower</th>
+									<th>Species</th>
 									<th>Color</th>
 									<th>Genes</th>
 								</tr>
 							</thead>
 							<tbody id="myTable">
-								{this.populateTable()}
+								{populateTable()}
 							</tbody>
 						</table>
 					</div>
@@ -302,31 +292,28 @@ class Grid extends React.Component {
 		return arr;
 	}
 
-	populateTable() {
+	function populateTable() {
 		let arr = [];
 		var x;
-		for (x = 0; x < this.flowers.length; x++) {
+		for (x = 0; x < flowers.current.length; x++) {
 			let y = x;
-		let gene = this.flowers[x][2];
-		let species = this.flowers[x][0];
-			if (this.showEntry(this.flowers[x][0], this.flowers[x][1], this.flowers[x][2])) {
-				arr.push(<tr onClick={() => this.setCurrentFlower(this.makeID(y), gene, species)}>
-					<td>{this.flowers[x][0]}</td>
-					<td>{this.flowers[x][1]}</td>
-					<td>{this.flowers[x][2]}</td>
+			let gene = flowers.current[x][2];
+			let species = flowers.current[x][0];
+			if (showEntry(flowers.current[x][0], flowers.current[x][1], flowers.current[x][2])) {
+				arr.push(<tr key = {"fl"+x.toString()} onClick={() => setCurrentFlower(makeID(y), gene, species)}>
+					<td>{flowers.current[x][0]}</td>
+					<td>{flowers.current[x][1]}</td>
+					<td>{flowers.current[x][2]}</td>
 				</tr>);
 			}
 		}
 		return arr;
 	}
 
-	showEntry(f, c, g) {
-		if (this.state.search.length === 0) {
-			return true;
-		}
-		let arr = this.state.search.split(" ");
+	function showEntry(f, c, g) {
+		let arr = search.split(" ");
 		if (arr.length === 1) {
-			return f.includes(this.state.search) || c.includes(this.state.search) || g.includes(this.state.search);
+			return f.includes(search) || c.includes(search) || g.includes(search);
 		}
 		if (f.includes(arr[0])) {
 			return c.includes(arr[1]) || g.includes(arr[1]);
@@ -338,38 +325,37 @@ class Grid extends React.Component {
 		return false;
 	}
 
-	makeID(x) {
-		let c = this.flowers[x][1].toLowerCase();
-		let f = this.flowers[x][0].toLowerCase();
+	function makeID(x) {
+		let c = flowers.current[x][1].toLowerCase();
+		let f = flowers.current[x][0].toLowerCase();
 		if (c.includes('seed')) {
 			c = c.slice(0, c.length - 7);
 		}
 		return c + f;
 	}
 
-	render() {
-		return(
+	return(
 		<div className="row">
-			{this.search()}
+			{searchFlowers()}
 			<div className="col-8">
 				<div className="tab-content" id="nav-tabContent">
 					<div className="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
 						<div className="container">
 							<div key = "Advance" className="row justify-content-md-center">
-								<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.revert}>
+								<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={revert}>
 									Rewind
 								</button>
-								<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={this.advance}>
+								<button type="button" className="btn btn-primary col-sm-2 m-4" onClick={advance}>
 									Advance
 								</button>
 							</div>
-							{this.renderGrid()}
+							{renderGrid()}
 							<br/>
 							<div className="row justify-content-md-center">
 								<label className="btn btn-primary col-sm-2 m-4"> 
-									<a className="text-white" href={this.save()} download="garden">Save</a>
+									<a className="text-white" href={save()} download="garden">Save</a>
 								</label>
-								<label className="btn btn-primary col-sm-2 m-4" onChange={this.load}>
+								<label className="btn btn-primary col-sm-2 m-4" onChange={load}>
 									Load <input type="file" style={{display:"none"}}/>
 								</label>
 							</div>
@@ -379,8 +365,5 @@ class Grid extends React.Component {
 				</div>
 			</div>
 		</div>
-		);
-	}
+	);
 }
-
-export default Grid
