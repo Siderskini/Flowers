@@ -89,8 +89,9 @@ export default function Grid() {
 	//Revert the grid by one time step
 	function revert() {
 		if (pastGrids.length > 0) {
-			let past = clonePast(pastGrids).pop();
-			setGrid(past);
+			let past = clonePast(pastGrids)
+			setGrid(past.pop());
+			setPastGrids(past);
 		}
 	}
 
